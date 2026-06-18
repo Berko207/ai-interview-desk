@@ -45,6 +45,6 @@ Default is cheap and capable. You can switch to Sonnet, GPT-4o-mini, Gemini, etc
 
 ## License
 
-MIT
+    MIT
 
-Built for builders chasing the engineering tier.
+    Built for builders chasing the engineering tier.
