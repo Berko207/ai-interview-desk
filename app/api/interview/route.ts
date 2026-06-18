@@ -1,35 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-3.5-haiku-20241022';
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
-const MODEL = 'claude-3-5-sonnet-20241022';
-
-interface AnthropicContentBlock {
-  type: string;
-  text?: string;
+interface OpenRouterResponse {
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
+  }>;
+  error?: {
+    message?: string;
+  };
 }
 
-interface AnthropicResponse {
-  content: AnthropicContentBlock[];
-  id: string;
-  model: string;
-  role: string;
-}
-
-function parseAnthropicResponse(data: AnthropicResponse): string {
-  if (!data.content || !Array.isArray(data.content)) return '';
-  return data.content
-    .filter((block): block is { type: string; text: string } => block.type === 'text' && !!block.text)
-    .map(block => block.text)
-    .join('\n')
-    .trim();
+function extractJSON(text: string): any {
+  try {
+    // Remove markdown code fences if present
+    let cleaned = text.replace(/```(?:json)?\s*|\s*```/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(request: NextRequest) {
-  if (!ANTHROPIC_API_KEY) {
+  if (!OPENROUTER_API_KEY) {
     return NextResponse.json(
-      { error: 'ANTHROPIC_API_KEY is not configured on the server.' },
+      { error: 'OPENROUTER_API_KEY is not configured on the server.' },
       { status: 500 }
     );
   }
@@ -64,47 +63,57 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }
 
-    const anthropicRes = await fetch(ANTHROPIC_URL, {
+    // Call OpenRouter (OpenAI-compatible format)
+    const openRouterRes = await fetch(OPENROUTER_URL, {
       method: 'POST',
       headers: {
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://ai-interview-desk.vercel.app', // Change to your domain if custom
+        'X-Title': 'AI Interview Desk',
       },
       body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 1024,
-        system: systemPrompt,
+        model: OPENROUTER_MODEL,
         messages: [
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage }
         ],
+        max_tokens: 1024,
+        temperature: 0.7,
       }),
     });
 
-    if (!anthropicRes.ok) {
-      const errText = await anthropicRes.text();
-      console.error('Anthropic API error:', errText);
+    if (!openRouterRes.ok) {
+      const errText = await openRouterRes.text();
+      console.error('OpenRouter API error:', errText);
       return NextResponse.json(
-        { error: `Anthropic API error: ${anthropicRes.status}` },
+        { error: `OpenRouter API error: ${openRouterRes.status}` },
         { status: 502 }
       );
     }
 
-    const anthropicData: AnthropicResponse = await anthropicRes.json();
-    const rawText = parseAnthropicResponse(anthropicData);
+    const data: OpenRouterResponse = await openRouterRes.json();
 
-    if (!rawText) {
-      return NextResponse.json({ error: 'Empty response from Anthropic' }, { status: 502 });
+    if (data.error) {
+      return NextResponse.json({ error: data.error.message || 'OpenRouter error' }, { status: 502 });
     }
 
-    const parsed = JSON.parse(rawText.replace(/```json|```/g, '').trim());
+    const rawContent = data.choices?.[0]?.message?.content;
+    if (!rawContent) {
+      return NextResponse.json({ error: 'No response content from model' }, { status: 502 });
+    }
+
+    const parsed = extractJSON(rawContent);
+    if (!parsed) {
+      return NextResponse.json({ error: 'Failed to parse model response as JSON' }, { status: 502 });
+    }
 
     return NextResponse.json(parsed);
 
   } catch (error: any) {
     console.error('Interview API error:', error);
     return NextResponse.json(
-      { error: error.message || 'Internal server error processing interview action' },
+      { error: error.message || 'Internal server error' },
       { status: 500 }
     );
   }
