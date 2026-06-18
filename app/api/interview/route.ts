@@ -17,7 +17,6 @@ interface OpenRouterResponse {
 
 function extractJSON(text: string): any {
   try {
-    // Remove markdown code fences if present
     let cleaned = text.replace(/```(?:json)?\s*|\s*```/g, '').trim();
     return JSON.parse(cleaned);
   } catch {
@@ -46,30 +45,36 @@ export async function POST(request: NextRequest) {
 
     if (action === 'question') {
       const { track = 'Generalist', focus = 'Technical reasoning' } = payload;
-      systemPrompt = `You are a senior technical interviewer for high-tier AI engineering contract roles at platforms like Mercor, Outlier, Mindrift, and Alignerr.\n\nGenerate ONE incisive, open-ended interview question for the ${track} track, focused on ${focus}.\n\nThe question must probe systems thinking, architectural depth, tradeoffs, evaluation rigor, or production reasoning \u2014 the kind that separates the $70\u2013$200+/hr engineering tier from the labeling tier.\n\nMake it realistic for a 15\u201325 minute AI-avatar interview. Avoid trivia, yes/no questions, or shallow prompts.\n\nReturn ONLY valid JSON with no markdown, no explanation, no extra text:\n{"question": "your generated question here"}`;
+      systemPrompt = `You are a senior technical interviewer for high-tier AI engineering contract roles at platforms like Mercor, Outlier, Mindrift, and Alignerr.\n\nGenerate ONE incisive, open-ended interview question for the ${track} track, focused on ${focus}.\n\nThe question must probe systems thinking, architectural depth, tradeoffs, evaluation rigor, or production reasoning — the kind that separates the $70–$200+/hr engineering tier from the labeling tier.\n\nMake it realistic for a 15–25 minute AI-avatar interview. Avoid trivia, yes/no questions, or shallow prompts.\n\nReturn ONLY valid JSON with no markdown, no explanation, no extra text:\n{"question": "your generated question here"}`;
       userMessage = `Generate one strong question for a ${track} candidate focusing on ${focus}.`;
 
     } else if (action === 'score') {
       const { question = '', answer = '', profileSummary } = payload;
-      systemPrompt = `You are an expert interviewer and coach for AI contract platforms (Mercor, Outlier, etc).\n\nScore the candidate's answer on a 1-10 integer scale for:\n- Depth of systems thinking and architecture\n- Clarity and structure\n- Relevance to high-tier engineering roles\n- Use of tradeoffs, metrics, and evaluation mindset\n\nUse the candidate's profile summary (if provided) to personalize feedback.\n\nReturn ONLY valid JSON, no markdown, no prose outside the object:\n{\n  "score": 7,\n  "strengths": ["specific strength 1", "specific strength 2"],\n  "improvements": ["actionable improvement 1", "actionable improvement 2"],\n  "strongerVersion": "A polished, concise rewrite of the answer that demonstrates stronger systems thinking, clearer tradeoffs, and measurable impact. Keep the candidate's voice but elevate it."\n}`;
+      systemPrompt = `You are an expert interviewer and coach for AI contract platforms (Mercor, Outlier, etc).\n\nScore the candidate's answer on a 1-10 integer scale for:\n- Depth of systems thinking and architecture\n- Clarity and structure\n- Relevance to high-tier engineering roles\n- Use of tradeoffs, metrics, and evaluation mindset\n\nUse the candidate's profile summary (if provided) to personalize feedback.\n\nReturn ONLY valid JSON, no markdown, no prose outside the object:\n{\n  "score": 7,\n  "strengths": ["specific strength 1", "specific strength 2"],\n  "improvements": ["actionable improvement 1", "actionable improvement 2"],\n  "strongerVersion": "A polished, concise rewrite of the answer that demonstrates stronger systems thinking, clearer tradeoffs, and measurable impact. Keep the candidate's voice but elevate it."
+}`;
       userMessage = `QUESTION:\n${question}\n\nCANDIDATE ANSWER:\n${answer}\n\n${profileSummary ? `CANDIDATE PROFILE SUMMARY:\n${profileSummary}` : 'No profile summary provided.'}\n\nScore the answer now.`;
 
     } else if (action === 'profile') {
       const { track = 'Generalist', years = 3, stack = '', projects = '' } = payload;
-      systemPrompt = `You are a profile optimizer for senior AI engineering contractors targeting Mercor, Outlier, Mindrift, Alignerr and similar platforms.\n\nTransform the raw background into a high-signal professional profile that signals senior systems/architecture/evaluation depth to LLM-based candidate matchers.\n\nEmphasize:\n- Concrete technical decisions and tradeoffs\n- Measurable impact (latency, reliability, cost, users)\n- Evaluation, monitoring, or production rigor\n- Precise language that rewards depth\n\nReturn ONLY valid JSON, no markdown:\n{\n  "headline": "Senior Full-Stack Engineer | Systems Architecture & Production AI",\n  "summary": "Two to three sentences that position the candidate at engineering tier.",\n  "bullets": [\n    "Architected X that delivered Y measurable outcome using A, B, C with rationale for choices.",\n    "Implemented evaluation harness for Z that improved metric from A to B.",\n    "Led migration / productionization of W with focus on reliability and observability."\n  ]\n}`;
+      systemPrompt = `You are a profile optimizer for senior AI engineering contractors targeting Mercor, Outlier, Mindrift, Alignerr and similar platforms.\n\nTransform the raw background into a high-signal professional profile that signals senior systems/architecture/evaluation depth to LLM-based candidate matchers.\n\nEmphasize:\n- Concrete technical decisions and tradeoffs\n- Measurable impact (latency, reliability, cost, users)\n- Evaluation, monitoring, or production rigor\n- Precise language that rewards depth\n\nReturn ONLY valid JSON, no markdown:\n{\n  "headline": "Senior Full-Stack Engineer | Systems Architecture & Production AI",\n  "summary": "Two to three sentences that position the candidate at engineering tier.",
+  "bullets": [
+    "Architected X that delivered Y measurable outcome using A, B, C with rationale for choices.",
+    "Implemented evaluation harness for Z that improved metric from A to B.",
+    "Led migration / productionization of W with focus on reliability and observability."
+  ]
+}`;
       userMessage = `TRACK: ${track}\nYEARS BUILDING: ${years}\nCORE STACK: ${stack}\nSTRONGEST PROJECTS (raw): ${projects}\n\nRewrite into a high-tier profile now.`;
 
     } else {
       return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }
 
-    // Call OpenRouter (OpenAI-compatible format)
     const openRouterRes = await fetch(OPENROUTER_URL, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://ai-interview-desk.vercel.app', // Change to your domain if custom
+        'HTTP-Referer': 'https://ai-interview-desk.vercel.app',
         'X-Title': 'AI Interview Desk',
       },
       body: JSON.stringify({
