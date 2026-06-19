@@ -25,7 +25,7 @@ function extractJSON(text: string): any {
 }
 
 export async function POST(request: NextRequest) {
-  if (!OPENROUTER_API_KEY) {
+  if (!OPENROUTER_API_KEY?.trim()) {
     return NextResponse.json(
       { error: 'OPENROUTER_API_KEY is not configured on the server.' },
       { status: 500 }
@@ -91,8 +91,15 @@ export async function POST(request: NextRequest) {
     if (!openRouterRes.ok) {
       const errText = await openRouterRes.text();
       console.error('OpenRouter API error:', errText);
+      let detail = errText;
+      try {
+        const errJson = JSON.parse(errText);
+        detail = errJson?.error?.message || errText;
+      } catch {
+        /* use raw text */
+      }
       return NextResponse.json(
-        { error: `OpenRouter API error: ${openRouterRes.status}` },
+        { error: `OpenRouter API error: ${openRouterRes.status} — ${detail}` },
         { status: 502 }
       );
     }
