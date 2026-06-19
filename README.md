@@ -1,50 +1,52 @@
 # AI Interview Desk
 
-**Claude-powered mock interview coach + profile optimizer + pipeline tracker** for AI engineering contract platforms (Mercor, Outlier, Mindrift, Alignerr).
+An AI-powered mock-interview coach, profile optimizer, and application tracker for AI-engineering contract platforms (Mercor, Outlier, Mindrift, Alignerr).
 
-> Now running on **OpenRouter** (cheaper + flexible models). Default: `anthropic/claude-3.5-haiku-20241022`
+![App screenshot](./docs/screenshot.png)
 
-**Live Demo:** https://ai-interview-desk.vercel.app  
-**Repo:** https://github.com/Berko207/ai-interview-desk
+> **TODO:** Replace `docs/screenshot.png` with a real screenshot of the live app.
+
+**[Live demo](https://ai-interview-desk.vercel.app)** · **[Repository](https://github.com/Berko207/ai-interview-desk)**
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Berko207/ai-interview-desk&env=OPENROUTER_API_KEY)
 
----
+## What it does
 
-## Status
+- **Interview brief** — orientation and track/focus setup before you practice
+- **AI mock interview with scoring** — generate platform-realistic questions, answer in prose, get a 1–10 score with strengths, gaps, and a stronger rewrite
+- **Question bank** — save generated questions locally and reload them for repeat practice
+- **AI profile builder** — turn raw stack and project notes into matcher-friendly headline, summary, and bullets
+- **Application pipeline** — track roles and status across Mercor, Outlier, Mindrift, Alignerr, and others
 
-✅ Fixed `next.config.ts` build error  
-✅ Switched to OpenRouter  
-✅ `OPENROUTER_API_KEY` configured in Vercel  
-✅ Clean API route deployed
+## How it works
 
-The app should now build and run successfully.
+Built on the Next.js App Router. A single `/api/interview` route holds `OPENROUTER_API_KEY` server-side and proxies to [OpenRouter](https://openrouter.ai) (OpenAI-compatible chat completions), so the key never reaches the browser. The UI persists state in `localStorage`; Supabase is a drop-in upgrade for cross-device sync. Default model is `anthropic/claude-3.5-haiku` via OpenRouter — swap it in one line with `OPENROUTER_MODEL`.
 
----
+All model calls are user-initiated (OpenRouter bills per call).
 
-## Quick Start
+## Tech stack
+
+Next.js 15, React 19, TypeScript, OpenRouter, hand-rolled CSS design system, Vercel.
+
+## Run locally
 
 ```bash
 git clone https://github.com/Berko207/ai-interview-desk.git
 cd ai-interview-desk
 cp .env.example .env.local
-# Add your OpenRouter key
+# Add your OpenRouter key to .env.local
 npm install
 npm run dev
 ```
 
----
+Open [http://localhost:3000](http://localhost:3000).
 
-## How to Change Model
+## Roadmap
 
-Set `OPENROUTER_MODEL` env var in Vercel or `.env.local` to any OpenRouter model slug.
-
-Default is cheap and capable. You can switch to Sonnet, GPT-4o-mini, Gemini, etc.
-
----
+- Spoken-answer mode with transcription
+- Supabase sync for questions, scores, and pipeline data
+- Harder Outlier-style coding questions
 
 ## License
 
-    MIT
-
-    Built for builders chasing the engineering tier..
+MIT
