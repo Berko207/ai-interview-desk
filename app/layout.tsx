@@ -2,11 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://ai-interview-desk.vercel.app"),
   title: "AI Interview Desk | Mock Interview Coach for AI Contract Platforms",
   description: "Claude-powered mock interviews, profile optimizer, and pipeline tracker for Mercor, Outlier, Mindrift, Alignerr and similar AI engineering contract roles. Built as a study tool and portfolio piece.",
-  icons: {
-    icon: "/favicon.ico",
-  },
 };
 
 export default function RootLayout({
