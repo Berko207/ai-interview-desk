@@ -20,7 +20,7 @@ An AI-powered mock-interview coach, profile optimizer, and application tracker f
 
 ## How it works
 
-Built on the Next.js App Router. A single `/api/interview` route holds `OPENROUTER_API_KEY` server-side and proxies to [OpenRouter](https://openrouter.ai) (OpenAI-compatible chat completions), so the key never reaches the browser. The UI persists state in `localStorage`; Supabase is a drop-in upgrade for cross-device sync. Default model is `anthropic/claude-3.5-haiku` via OpenRouter — swap it in one line with `OPENROUTER_MODEL`.
+Built on the Next.js App Router. A single `/api/interview` route holds `OPENROUTER_API_KEY` server-side and proxies to [OpenRouter](https://openrouter.ai) (OpenAI-compatible chat completions), so the key never reaches the browser. The UI persists state in `localStorage`; Supabase is a drop-in upgrade for cross-device sync. Default model is `openrouter/free` (no credits required); set `OPENROUTER_MODEL=anthropic/claude-3.5-haiku` in one line for higher-quality responses.
 
 All model calls are user-initiated (OpenRouter bills per call).
 
