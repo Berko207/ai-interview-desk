@@ -1,8 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { VerifySkillsTab } from '@/components/verify-skills-tab';
+import type { VerifySkill } from '@/lib/verify-skills';
 
-type Tab = 'brief' | 'interview' | 'questions' | 'profile' | 'pipeline';
+type Tab = 'brief' | 'interview' | 'questions' | 'profile' | 'pipeline' | 'skills';
 
 type Track = 'Generalist' | 'Full-Stack' | 'ML/AI' | 'Data' | 'Backend';
 type Focus = 'Technical reasoning' | 'System design' | 'Evaluation & metrics' | 'Production rigor';
@@ -59,6 +61,11 @@ interface AppState {
   lastScore: ScoreResult | null;
   lastProfile: ProfileResult | null;
   sessionScores: number[];
+  selectedSkill: VerifySkill;
+  screeningQuestion: string;
+  screeningAnswer: string;
+  lastScreeningScore: ScoreResult | null;
+  screeningSessionScores: number[];
 }
 
 const STORAGE_KEY = 'ai-interview-desk-v1';
@@ -77,6 +84,11 @@ const DEFAULT_STATE: AppState = {
   lastScore: null,
   lastProfile: null,
   sessionScores: [],
+  selectedSkill: 'JavaScript',
+  screeningQuestion: '',
+  screeningAnswer: '',
+  lastScreeningScore: null,
+  screeningSessionScores: [],
 };
 
 const PLATFORMS = ['Mercor', 'Outlier', 'Mindrift', 'Alignerr', 'Other'];
@@ -265,6 +277,43 @@ export default function Home() {
     patch({ pipeline: state.pipeline.filter((p) => p.id !== id) });
   };
 
+  const handleGenerateScreeningQuestion = async () => {
+    const data = await runAction(
+      'screening_question',
+      { skill: state.selectedSkill },
+      'screening_question'
+    );
+    if (data?.question) {
+      patch({ screeningQuestion: data.question, screeningAnswer: '', lastScreeningScore: null });
+    }
+  };
+
+  const handleScoreScreeningAnswer = async () => {
+    if (!state.screeningQuestion.trim() || !state.screeningAnswer.trim()) {
+      setError('Add a question and answer before scoring.');
+      return;
+    }
+    const data = (await runAction(
+      'screening_score',
+      {
+        skill: state.selectedSkill,
+        question: state.screeningQuestion,
+        answer: state.screeningAnswer,
+      },
+      'screening_score'
+    )) as ScoreResult | null;
+    if (data?.score != null) {
+      patch({
+        lastScreeningScore: data,
+        screeningSessionScores: [...state.screeningSessionScores, data.score],
+      });
+    }
+  };
+
+  const handleClearScreeningSession = () => {
+    patch({ screeningSessionScores: [], lastScreeningScore: null });
+  };
+
   const sessionAvg = avgScore(state.sessionScores);
   const scoreRingOffset = state.lastScore
     ? 283 - (283 * state.lastScore.score) / 10
@@ -316,6 +365,7 @@ export default function Home() {
               ['questions', 'Question Bank'],
               ['profile', 'Profile'],
               ['pipeline', 'Pipeline'],
+              ['skills', 'Verify Skills'],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -748,6 +798,29 @@ export default function Home() {
               </div>
             )}
           </section>
+        )}
+
+        {tab === 'skills' && (
+          <VerifySkillsTab
+            selectedSkill={state.selectedSkill}
+            onSelectSkill={(skill) =>
+              patch({
+                selectedSkill: skill,
+                screeningQuestion: '',
+                screeningAnswer: '',
+                lastScreeningScore: null,
+              })
+            }
+            question={state.screeningQuestion}
+            answer={state.screeningAnswer}
+            onAnswerChange={(a) => patch({ screeningAnswer: a })}
+            lastScore={state.lastScreeningScore}
+            sessionScores={state.screeningSessionScores}
+            loading={loading}
+            onGenerateQuestion={handleGenerateScreeningQuestion}
+            onScoreAnswer={handleScoreScreeningAnswer}
+            onClearSession={handleClearScreeningSession}
+          />
         )}
       </main>
 
