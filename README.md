@@ -4,8 +4,6 @@ An AI-powered mock-interview coach, profile optimizer, and application tracker f
 
 ![App screenshot](./docs/screenshot.png)
 
-> **TODO:** Replace `docs/screenshot.png` with a real screenshot of the live app.
-
 **[Live demo](https://ai-interview-desk.vercel.app)** · **[Repository](https://github.com/Berko207/ai-interview-desk)**
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Berko207/ai-interview-desk&env=OPENROUTER_API_KEY)

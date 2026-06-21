@@ -65,6 +65,17 @@ export async function POST(request: NextRequest) {
 }`;
       userMessage = `TRACK: ${track}\nYEARS BUILDING: ${years}\nCORE STACK: ${stack}\nSTRONGEST PROJECTS (raw): ${projects}\n\nRewrite into a high-tier profile now.`;
 
+    } else if (action === 'screening_question') {
+      const { skill = 'JavaScript' } = payload;
+      systemPrompt = `You are a skill verification item writer for Mercor-style contractor screenings.\n\nGenerate ONE realistic screening question for the skill: ${skill}.\n\nMatch the style of timed platform skill assessments:\n- For programming skills (JavaScript, TypeScript, Python, C#, React, Frontend Development): mix conceptual depth with code reading, debugging, or short implementation prompts. Avoid trivia; test applied understanding.\n- For Git / Git and Docker: scenario-based workflow questions (branching, conflicts, recovery, Dockerfile, compose).\n- For Spanish (Español): professional Spanish — grammar, reading comprehension, translation, or a short written response prompt IN SPANISH.\n\nThe question should be completable in 3–8 minutes. One clear prompt only.\n\nReturn ONLY valid JSON, no markdown:\n{"question": "the full question text"}`;
+      userMessage = `Generate one ${skill} screening question now.`;
+
+    } else if (action === 'screening_score') {
+      const { skill = 'JavaScript', question = '', answer = '' } = payload;
+      systemPrompt = `You are an expert grader for Mercor-style skill verification screenings.\n\nScore the candidate's answer for ${skill} mastery on a 1–10 integer scale.\n\nCriteria:\n- Correctness and completeness for the skill domain\n- Clarity of explanation (or Spanish fluency for Spanish screenings)\n- Practical, production-relevant depth — not textbook fluff\n- For code answers: idiomatic style and edge-case awareness\n\nReturn ONLY valid JSON, no markdown:\n{\n  "score": 7,\n  "strengths": ["specific strength 1", "specific strength 2"],\n  "improvements": ["actionable gap 1", "actionable gap 2"],\n  "strongerVersion": "A polished model answer that would likely pass the real screening."
+}`;
+      userMessage = `SKILL: ${skill}\n\nQUESTION:\n${question}\n\nCANDIDATE ANSWER:\n${answer}\n\nScore this answer now.`;
+
     } else {
       return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }
